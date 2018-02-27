@@ -17,6 +17,7 @@ string ask_move(string);
 void cursor_up(int n);
 void clear_line(void);
 void cursor_up_clear(int n);
+string get_without_cr(void);
 
 const string hellomessage = R"(Bomba! You are Minion Kevin! You must direct your team of 6 Minion Bomb Transporters
 across a high narrow bridge.You, Jerry, and Carl are seasoned experts, but Dave, Stuart, and
@@ -33,6 +34,7 @@ int main() {
     char right[7] = "      ";
 	int side = LEFT;
     int attempts = 0;
+    string user_move;
     cout << hellomessage;
 	
 	cout << "Press any key to enter the game\n";
@@ -51,7 +53,7 @@ int main() {
     }
 
 	printgame(left, right, side);
-    ask_move(left);
+    user_move = ask_move(left);
     system("PAUSE");
 	return 0;
 
@@ -73,19 +75,25 @@ string ask_move(string current_side) {
     string user_input;
     string str_pattern = "^[" + current_side + "]{1,2}$";
     cout << str_pattern << endl;
-    regex pattern(str_pattern.begin(), str_pattern.end());
+    regex pattern (str_pattern);
     while (true) {
-        cin >> user_input;
-        while (!regex_match(user_input, pattern)) {
+        user_input = get_without_cr();
+        while (!(regex_match(user_input, pattern) && user_input[0] != user_input[1] )) {
             cout << "Invalid Input!";
-            cout << "\033[A\33[2K\r";
-            cin >> user_input;
+            // Move back to input line, clear and return
+            cursor_up(1);
+            clear_line();
+            cout << '\r';
+            // We don't use cin because we don't want carriage return
+            // to disrupt our command line
+            user_input = get_without_cr();
         }
-        clear_line();
         cout << "You have inputted " << user_input << ". Is that correct?\n" <<
             "Press N or n to type in again, press any other key to get the minons moving.\n";
-        if (toupper(_getch()) == 'N')
-            cursor_up_clear(4);
+        if (toupper(_getch()) == 'N') {
+            cursor_up_clear(3); // two for the cout, one for the input line
+            clear_line(); // clear the input line
+        }
         else
             return user_input;
     }
@@ -95,12 +103,37 @@ void cursor_up(int n) {
     for (int i = 0; i < n; i++) cout << "\033[A";
 }
 
+void clear_line(void) {
+    cout << "\33[2K";
+}
+
 void cursor_up_clear(int n) {
     for (int i = 0; i < n; i++) {
         clear_line();
         cursor_up(1);
     };
 }
-void clear_line(void) {
-    cout << "\33[2K";
+
+string get_without_cr() {
+    char user_input = 0;
+    string user_str = "";
+    while (user_input != '\r') {
+        user_input = _getche();
+        switch (user_input) {
+        case '\b':
+            if (user_str.length() > 0)
+                user_str.resize(user_str.length() - 1);
+            break;
+        case '\r':
+            break;
+        default:
+            user_str += user_input;
+        }
+    }
+    // Transform to upper case
+    for (char &c : user_str) {
+        c = toupper(c);
+    }
+    cout << endl; // newline is not automatically inserted like cin
+    return user_str;
 }
