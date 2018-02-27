@@ -1,13 +1,12 @@
-#include "string.h"
-#include "string"
-#include "iostream"
-#include "stdio.h"
-#include "windows.h"
-#include "conio.h"
-#include "regex"
-#include "map"
+// Requires a terminal capable of showing ANSI escape sequences (every modern terminal?)
 #include "algorithm"
+#include "iostream"
+#include "map"
+#include "regex"
+#include "string"
 #include "vector"
+#include "conio.h"
+#include "windows.h"
 using namespace std;
 
 // Global Scope definitions
@@ -23,11 +22,13 @@ const map<char, minion_identity> IDENTITY_LOOKUP = {
     {'S', NEWBIE},
     {'B', NEWBIE}
 };
-constexpr int NUM = 6; // Number of minions
 const unsigned int LEN_BRIDGE = 40;
+// Derived definitions
+const unsigned int NUM_MINIONS = MINIONS.length();
 
 // Function Prototypes
 void printgame(string left ,string right, sides side);
+void print_minion_identity(string minions);
 string ask_move(string);
 void move_minions(string &from, string &to, sides side, string to_move);
 status judge(string left, string right);
@@ -44,7 +45,7 @@ const string hellomessage = R"(Bomba! You are Minion Kevin! You must direct your
 across a high narrow bridge.You, Jerry, and Carl are seasoned experts, but Dave, Stuart, and
 Bob are over - excited newbies.Initially, all 6 of you are on one side of the bridge.Your task is to
 get everybody across the bridge.But, the bridge can only take the weight of 1 or 2 Transporters
-at a time, and it¡¯s dark!You only have a single lantern that must be carried with each crossing
+at a time, and it's dark!You only have a single lantern that must be carried with each crossing
 to light your way across!Even worse, when newbies and experts are both together on one side
 and newbies outnumber expects, they start squabbling and hitting one another, their bombs go
 off, and everybody dies!
@@ -83,24 +84,30 @@ int main() {
 }
 
 void printgame(string left, string right, sides side) {
+    int padding = NUM_MINIONS - left.length();
 	system("CLS");
-    string left_identity(left.length(), ' ');
-    string right_identity(right.length(), ' ');
-    transform(left.begin(), left.end(), left_identity.begin(),
-        [](char c) -> char {return (IDENTITY_LOOKUP.at(c) == NEWBIE) ? 'N' : 'E'; });
-    transform(right.begin(), right.end(), right_identity.begin(),
-        [](char c) -> char {return (IDENTITY_LOOKUP.at(c) == NEWBIE) ? 'N' : 'E'; });
-    cout << "EXPERT: Kevin Jerry Carl (KJC) \nNEWBIES: Dave Stuart Bob (DSB)\n";
+    cout << "Expert: Kevin Jerry Carl (KJC)\t\tNewbies: Dave Stuart Bob (DSB)\n";
     cout << ((side == LEFT)? "Left": "Right") << " side to move now\n\n\n";
+
     // Print padding and the identity of minions on their head
-    cout << string(NUM - left.length(), ' ') << left_identity;
-    cout << string(LEN_BRIDGE + 2, ' ') << right_identity << endl;
-    cout << string(NUM - left.length(), ' ') << left << ((side == LEFT) ? '*' : ' ');
-    cout << string(LEN_BRIDGE, ' ');
-    cout << ((side == RIGHT) ? '*' : ' ') << right << endl;
-    cout << string(8, '-') << string(LEN_BRIDGE - 2, '=') << string(8, '-') << endl;
+    cout << string(padding, ' ');
+    print_minion_identity(left);
+    cout << string(LEN_BRIDGE + 2, ' ');
+    print_minion_identity(right);
+
+    // print padding, name of minions, lantern and the floor
+    cout << '\n' << string(padding, ' ') << left << ((side == LEFT) ? '*' : ' ') <<
+        string(LEN_BRIDGE, ' ') << ((side == RIGHT) ? '*' : ' ') << right << endl <<
+        string(8, '-') << string(LEN_BRIDGE - 2, '=') << string(8, '-') << endl;
+
+    // print the bottom
     for (int i = 0; i < 4; i++) cout << string(7, ' ') <<
         "|" << string(LEN_BRIDGE - 2, ' ') << "|\n";
+}
+
+void print_minion_identity(string minions) {
+    for_each(minions.begin(), minions.end(),
+        [](char c) -> void {cout << (IDENTITY_LOOKUP.at(c) == NEWBIE) ? 'N' : 'E'; });
 }
 
 string ask_move(string current_side) {
@@ -146,7 +153,7 @@ void move_minions(string &left, string &right, sides side, string to_move){
 }
 
 status judge(string left, string right){
-    if (left.length() == 0 && right.length() == NUM)
+    if (left.length() == 0 && right.length() == NUM_MINIONS)
         return WIN;
     else if (lose_condition(left) || lose_condition(right))
         return LOSE;
@@ -168,12 +175,10 @@ bool lose_condition(string current_side) {
 void count_down() {
     cout << "Game start in 3 seconds";
     for (int i = 2; i >= 0; i--) {
-        Sleep(250);
-        cout << ".";
-        Sleep(250);
-        cout << ".";
-        Sleep(250);
-        cout << ".";
+        for (int j = 0; j < 3; j++) {
+            Sleep(250);
+            cout << ".";
+        }
         Sleep(250);
         if (i == 0) return;
         // We erase the 3 dots, then also the "<i> seconds", and push the cursor 1 more backwards
