@@ -6,14 +6,18 @@
 #include "conio.h"
 #include "regex"
 using namespace std;
-#define LEFT 0 
-#define RIGHT 1
-const string MINIONS = "KJCDSB";
 
-void printgame(char left[] ,char right[], int side);
+const string MINIONS = "KJCDSB";
+enum sides {LEFT, RIGHT};
+enum status {WIN, LOSE, CONTINUE};
+
+void printgame(char left[] ,char right[], sides side);
 string ask_move(string);
+void move_minions(char from[], char to[], string moved);
+status judge(char left[], char right[]);
 
 // Helper Functions
+void count_down(void);
 void cursor_up(int n);
 void clear_line(void);
 void cursor_up_clear(int n);
@@ -32,15 +36,36 @@ off, and everybody dies!
 int main() {
 	char left[7] = "KJCDSB";
     char right[7] = "      ";
-	int side = LEFT;
     int attempts = 0;
     string user_move;
+	sides side = LEFT;
+    status game;
     cout << hellomessage;
 	
 	cout << "Press any key to enter the game\n";
     _getch();
     system("cls");
-	cout << "Game start in 3 second";
+    count_down();
+    do {
+        printgame(left, right, side);
+        if (attempts & 1 == 0) {
+            user_move = ask_move(left);
+            move_minions(left, right, user_move);
+        }
+        else {
+            user_move = ask_move(right);
+            move_minions(right, left, user_move);
+        }
+        game = judge(left, right);
+        attempts++;
+    } while (game == CONTINUE);
+    system("PAUSE");
+	return 0;
+
+}
+
+void count_down() {
+    cout << "Game start in 3 seconds";
     for (int i = 2; i >= 0; i--) {
         // Sleep(250);
         cout << ".";
@@ -49,18 +74,15 @@ int main() {
         // Sleep(250);
         cout << ".";
         // Sleep(250);
-        if (i != 0) cout << "\b \b\b \b\b \b\b\b\b\b\b\b\b\b" << i << " second";
+        Sleep(1000);
+        if (i == 0) return;
+        // We erase the 3 dots, then also the "<i> seconds", and push the cursor 1 more backwards
+        else cout << "\b \b\b \b\b \b\b\b\b\b\b\b\b\b\b" <<
+            i << " second" << ((i == 1)? " \b": "s");
     }
-
-	printgame(left, right, side);
-    user_move = ask_move(left);
-    system("PAUSE");
-	return 0;
-
 }
 
-
-void printgame(char left[], char right[], int side) {
+void printgame(char left[], char right[], sides side) {
 	system("CLS");
 	cout << "EXPERT: Kevin Jerry Carl (KJC) \nNEWBIES: Dave Stuart Bob (DSB)\n\n\n\n";
     cout << left << ((side == LEFT) ? '*' : ' ');
@@ -74,7 +96,6 @@ void printgame(char left[], char right[], int side) {
 string ask_move(string current_side) {
     string user_input;
     string str_pattern = "^[" + current_side + "]{1,2}$";
-    cout << str_pattern << endl;
     regex pattern (str_pattern);
     while (true) {
         user_input = get_without_cr();
@@ -136,4 +157,10 @@ string get_without_cr() {
     }
     cout << endl; // newline is not automatically inserted like cin
     return user_str;
+}
+void move_minions(char from[], char to[], string moved){
+}
+
+status judge(char left[], char right[]){
+    return CONTINUE;
 }
