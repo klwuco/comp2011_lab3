@@ -92,28 +92,29 @@ void printgame(string left, string right, sides side) {
     // Print padding and the identity of minions on their head
     cout << string(padding, ' ');
     print_minion_identity(left);
-    cout << string(LEN_BRIDGE + 2, ' ');
+    cout << string(LEN_BRIDGE + 4, ' ');
     print_minion_identity(right);
 
     // print padding, name of minions, lantern and the floor
     cout << '\n' << string(padding, ' ') << left << ((side == LEFT) ? '*' : ' ') <<
-        string(LEN_BRIDGE, ' ') << ((side == RIGHT) ? '*' : ' ') << right << endl <<
-        string(8, '-') << string(LEN_BRIDGE - 2, '=') << string(8, '-') << endl;
+        string(LEN_BRIDGE + 2, ' ') << ((side == RIGHT) ? '*' : ' ') << right << endl <<
+        string(NUM_MINIONS + 2, '-') << string(LEN_BRIDGE, '=') << string(NUM_MINIONS + 2, '-') << endl;
 
     // print the bottom
-    for (int i = 0; i < 4; i++) cout << string(7, ' ') <<
-        "|" << string(LEN_BRIDGE - 2, ' ') << "|\n";
+    for (int i = 0; i < 4; i++) cout << string(NUM_MINIONS + 1, ' ') <<
+        "|" << string(LEN_BRIDGE, ' ') << "|\n";
 }
 
 void print_minion_identity(string minions) {
     for_each(minions.begin(), minions.end(),
-        [](char c) -> void {cout << (IDENTITY_LOOKUP.at(c) == NEWBIE) ? 'N' : 'E'; });
+        [](char c) -> void {cout << ((IDENTITY_LOOKUP.at(c) == NEWBIE) ? 'N' : 'E'); });
 }
 
 string ask_move(string current_side) {
     string user_input;
     string str_pattern = "^[" + current_side + "]{1,2}$";
     regex pattern (str_pattern);
+    cout << "Who will cross the bridge? (" << current_side << ")\n";
     while (true) {
         user_input = get_without_cr();
         while (!(regex_match(user_input, pattern) && user_input[0] != user_input[1] )) {
