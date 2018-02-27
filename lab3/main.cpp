@@ -5,20 +5,33 @@
 #include "windows.h"
 #include "conio.h"
 #include "regex"
+#include "map"
+#include "algorithm"
+#include "vector"
 using namespace std;
 
 // Global Scope definitions
-const string MINIONS = "KJCDSB";
-constexpr int NUM = 6; // Number of minions
-const unsigned int LEN_BRIDGE = 40;
 enum sides {LEFT, RIGHT};
 enum status {WIN, LOSE, CONTINUE};
+enum minion_identity {EXPERT, NEWBIE};
+const string MINIONS = "KJCDSB";
+const map<char, minion_identity> IDENTITY_LOOKUP = {
+    {'K', EXPERT},
+    {'J', EXPERT},
+    {'C', EXPERT},
+    {'D', NEWBIE},
+    {'S', NEWBIE},
+    {'B', NEWBIE}
+};
+constexpr int NUM = 6; // Number of minions
+const unsigned int LEN_BRIDGE = 40;
 
 // Function Prototypes
-void printgame(char left[] ,char right[], sides side);
+void printgame(string left ,string right, sides side);
 string ask_move(string);
-void move_minions(char from[], char to[], sides side, string to_move);
-status judge(char left[], char right[]);
+void move_minions(string &from, string &to, sides side, string to_move);
+status judge(string left, string right);
+bool lose_condition(string current_side);
 
 // Helper Functions
 void count_down(void);
@@ -38,9 +51,8 @@ off, and everybody dies!
 )";
 
 int main() {
-    char left[NUM + 1];
-    strcpy_s(left, MINIONS.c_str());
-    char right[NUM + 1] = "";
+    string left = MINIONS;
+    string right = "";
     int attempts = 0;
     string user_move;
 	sides side = RIGHT;
@@ -50,7 +62,7 @@ int main() {
 	cout << "Press any key to enter the game\n";
     _getch();
     system("cls");
-    count_down();
+    //count_down();
     do {
         side = (side == LEFT) ? RIGHT : LEFT; // switch sides
         printgame(left, right, side);
@@ -60,22 +72,30 @@ int main() {
         attempts++;
     } while (game == CONTINUE);
     if (game == LOSE) {
-    
+        cout << "LOSE\n";
     }
     else {
-
+        cout << "WIN\n";
     }
     system("PAUSE");
 	return 0;
 
 }
 
-void printgame(char left[], char right[], sides side) {
+void printgame(string left, string right, sides side) {
 	system("CLS");
+    string left_identity(left.length(), ' ');
+    string right_identity(right.length(), ' ');
+    transform(left.begin(), left.end(), left_identity.begin(),
+        [](char c) -> char {return (IDENTITY_LOOKUP.at(c) == NEWBIE) ? 'N' : 'E'; });
+    transform(right.begin(), right.end(), right_identity.begin(),
+        [](char c) -> char {return (IDENTITY_LOOKUP.at(c) == NEWBIE) ? 'N' : 'E'; });
     cout << "EXPERT: Kevin Jerry Carl (KJC) \nNEWBIES: Dave Stuart Bob (DSB)\n";
     cout << ((side == LEFT)? "Left": "Right") << " side to move now\n\n\n";
-    // Print padding, minions to the left and the lantern
-    cout << string(NUM - strlen(left), ' ') << left << ((side == LEFT) ? '*' : ' ');
+    // Print padding and the identity of minions on their head
+    cout << string(NUM - left.length(), ' ') << left_identity;
+    cout << string(LEN_BRIDGE + 2, ' ') << right_identity << endl;
+    cout << string(NUM - left.length(), ' ') << left << ((side == LEFT) ? '*' : ' ');
     cout << string(LEN_BRIDGE, ' ');
     cout << ((side == RIGHT) ? '*' : ' ') << right << endl;
     cout << string(8, '-') << string(LEN_BRIDGE - 2, '=') << string(8, '-') << endl;
@@ -110,13 +130,37 @@ string ask_move(string current_side) {
     }
 }
 
-void move_minions(char left[], char right[], sides side, string to_move){
-    cout << "Called move_minions\n";
+void move_minions(string &left, string &right, sides side, string to_move){
+    for (char minion : to_move) {
+        if (side == LEFT) {
+            // the minion must be found somewhere in the string,
+            // because it was checked by regex before calling.
+            left.erase(left.find(minion), 1);
+            right += minion;
+        }
+        else {
+            right.erase(right.find(minion), 1);
+            left += minion;
+        }
+    }
 }
 
-status judge(char left[], char right[]){
-    cout << "Called judge\n";
+status judge(string left, string right){
+    if (left.length() == 0 && right.length() == NUM)
+        return WIN;
+    else if (lose_condition(left) || lose_condition(right))
+        return LOSE;
     return CONTINUE;
+}
+
+bool lose_condition(string current_side) {
+    int num_newbie;
+    int num_minion_on_side = current_side.length();
+    num_newbie = count_if(current_side.begin(), current_side.end(),
+        [](char c) -> bool {return IDENTITY_LOOKUP.at(c) == NEWBIE; });
+    return ((float)num_newbie) / num_minion_on_side > 0.5 &&
+        num_minion_on_side > num_newbie;
+
 }
 
 // Helper Functions
@@ -160,7 +204,13 @@ string get_without_cr() {
         user_input = _getche();
         switch (user_input) {
         case '\b':
-            if (user_str.length() > 0) user_str.pop_back();
+            if (user_str.length() > 0) { 
+                user_str.pop_back();
+                cout << " \b";
+            }
+            else {
+                cout << '\n'; // Prevents going back 1 line
+            }
             break;
         case '\r':
             break;
