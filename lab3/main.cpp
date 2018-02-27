@@ -13,7 +13,7 @@ enum status {WIN, LOSE, CONTINUE};
 
 void printgame(char left[] ,char right[], sides side);
 string ask_move(string);
-void move_minions(char from[], char to[], string moved);
+void move_minions(char from[], char to[], sides side, string moved);
 status judge(char left[], char right[]);
 
 // Helper Functions
@@ -48,17 +48,18 @@ int main() {
     count_down();
     do {
         printgame(left, right, side);
-        if (attempts & 1 == 0) {
-            user_move = ask_move(left);
-            move_minions(left, right, user_move);
-        }
-        else {
-            user_move = ask_move(right);
-            move_minions(right, left, user_move);
-        }
+        user_move = ask_move((side == LEFT) ? left : right);
+        move_minions(left, right, side, user_move);
         game = judge(left, right);
         attempts++;
+        side = (side == LEFT) ? RIGHT : LEFT; // switch sides
     } while (game == CONTINUE);
+    if (game == LOSE) {
+    
+    }
+    else {
+    
+    }
     system("PAUSE");
 	return 0;
 
@@ -74,7 +75,6 @@ void count_down() {
         // Sleep(250);
         cout << ".";
         // Sleep(250);
-        Sleep(1000);
         if (i == 0) return;
         // We erase the 3 dots, then also the "<i> seconds", and push the cursor 1 more backwards
         else cout << "\b \b\b \b\b \b\b\b\b\b\b\b\b\b\b" <<
@@ -84,7 +84,8 @@ void count_down() {
 
 void printgame(char left[], char right[], sides side) {
 	system("CLS");
-	cout << "EXPERT: Kevin Jerry Carl (KJC) \nNEWBIES: Dave Stuart Bob (DSB)\n\n\n\n";
+    cout << "EXPERT: Kevin Jerry Carl (KJC) \nNEWBIES: Dave Stuart Bob (DSB)\n";
+    cout << ((side == LEFT)? "Left": "Right") << " side to move now\n\n\n";
     cout << left << ((side == LEFT) ? '*' : ' ');
     cout << string(38, ' ');
     cout << ((side == RIGHT) ? '*' : ' ') << right << endl;
@@ -151,14 +152,10 @@ string get_without_cr() {
             user_str += user_input;
         }
     }
-    // Transform to upper case
-    for (char &c : user_str) {
-        c = toupper(c);
-    }
     cout << endl; // newline is not automatically inserted like cin
     return user_str;
 }
-void move_minions(char from[], char to[], string moved){
+void move_minions(char left[], char right[], sides side, string moved){
 }
 
 status judge(char left[], char right[]){
