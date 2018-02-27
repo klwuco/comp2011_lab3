@@ -7,13 +7,17 @@
 #include "regex"
 using namespace std;
 
+// Global Scope definitions
 const string MINIONS = "KJCDSB";
+constexpr int NUM = 6; // Number of minions
+const unsigned int LEN_BRIDGE = 40;
 enum sides {LEFT, RIGHT};
 enum status {WIN, LOSE, CONTINUE};
 
+// Function Prototypes
 void printgame(char left[] ,char right[], sides side);
 string ask_move(string);
-void move_minions(char from[], char to[], sides side, string moved);
+void move_minions(char from[], char to[], sides side, string to_move);
 status judge(char left[], char right[]);
 
 // Helper Functions
@@ -34,11 +38,12 @@ off, and everybody dies!
 )";
 
 int main() {
-	char left[7] = "KJCDSB";
-    char right[7] = "      ";
+    char left[NUM + 1];
+    strcpy_s(left, MINIONS.c_str());
+    char right[NUM + 1] = "";
     int attempts = 0;
     string user_move;
-	sides side = LEFT;
+	sides side = RIGHT;
     status game;
     cout << hellomessage;
 	
@@ -47,51 +52,35 @@ int main() {
     system("cls");
     count_down();
     do {
+        side = (side == LEFT) ? RIGHT : LEFT; // switch sides
         printgame(left, right, side);
         user_move = ask_move((side == LEFT) ? left : right);
         move_minions(left, right, side, user_move);
         game = judge(left, right);
         attempts++;
-        side = (side == LEFT) ? RIGHT : LEFT; // switch sides
     } while (game == CONTINUE);
     if (game == LOSE) {
     
     }
     else {
-    
+
     }
     system("PAUSE");
 	return 0;
 
 }
 
-void count_down() {
-    cout << "Game start in 3 seconds";
-    for (int i = 2; i >= 0; i--) {
-        // Sleep(250);
-        cout << ".";
-        // Sleep(250);
-        cout << ".";
-        // Sleep(250);
-        cout << ".";
-        // Sleep(250);
-        if (i == 0) return;
-        // We erase the 3 dots, then also the "<i> seconds", and push the cursor 1 more backwards
-        else cout << "\b \b\b \b\b \b\b\b\b\b\b\b\b\b\b" <<
-            i << " second" << ((i == 1)? " \b": "s");
-    }
-}
-
 void printgame(char left[], char right[], sides side) {
 	system("CLS");
     cout << "EXPERT: Kevin Jerry Carl (KJC) \nNEWBIES: Dave Stuart Bob (DSB)\n";
     cout << ((side == LEFT)? "Left": "Right") << " side to move now\n\n\n";
-    cout << left << ((side == LEFT) ? '*' : ' ');
-    cout << string(38, ' ');
+    // Print padding, minions to the left and the lantern
+    cout << string(NUM - strlen(left), ' ') << left << ((side == LEFT) ? '*' : ' ');
+    cout << string(LEN_BRIDGE, ' ');
     cout << ((side == RIGHT) ? '*' : ' ') << right << endl;
-    cout << string(8, '-') << string(36, '=') << string(8, '-') << endl;
+    cout << string(8, '-') << string(LEN_BRIDGE - 2, '=') << string(8, '-') << endl;
     for (int i = 0; i < 4; i++) cout << string(7, ' ') <<
-        "|" << string(36, ' ') << "|\n";
+        "|" << string(LEN_BRIDGE - 2, ' ') << "|\n";
 }
 
 string ask_move(string current_side) {
@@ -107,7 +96,7 @@ string ask_move(string current_side) {
             clear_line();
             cout << '\r';
             // We don't use cin because we don't want carriage return
-            // to disrupt our command line
+            // to disrupt our nice prints
             user_input = get_without_cr();
         }
         cout << "You have inputted " << user_input << ". Is that correct?\n" <<
@@ -118,6 +107,34 @@ string ask_move(string current_side) {
         }
         else
             return user_input;
+    }
+}
+
+void move_minions(char left[], char right[], sides side, string to_move){
+    cout << "Called move_minions\n";
+}
+
+status judge(char left[], char right[]){
+    cout << "Called judge\n";
+    return CONTINUE;
+}
+
+// Helper Functions
+
+void count_down() {
+    cout << "Game start in 3 seconds";
+    for (int i = 2; i >= 0; i--) {
+        Sleep(250);
+        cout << ".";
+        Sleep(250);
+        cout << ".";
+        Sleep(250);
+        cout << ".";
+        Sleep(250);
+        if (i == 0) return;
+        // We erase the 3 dots, then also the "<i> seconds", and push the cursor 1 more backwards
+        else cout << "\b \b\b \b\b \b\b\b\b\b\b\b\b\b\b" <<
+            i << " second" << ((i == 1)? " \b": "s");
     }
 }
 
@@ -143,8 +160,7 @@ string get_without_cr() {
         user_input = _getche();
         switch (user_input) {
         case '\b':
-            if (user_str.length() > 0)
-                user_str.resize(user_str.length() - 1);
+            if (user_str.length() > 0) user_str.pop_back();
             break;
         case '\r':
             break;
@@ -154,10 +170,4 @@ string get_without_cr() {
     }
     cout << endl; // newline is not automatically inserted like cin
     return user_str;
-}
-void move_minions(char left[], char right[], sides side, string moved){
-}
-
-status judge(char left[], char right[]){
-    return CONTINUE;
 }
