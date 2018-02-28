@@ -1,19 +1,33 @@
 // Requires a terminal capable of showing ANSI escape sequences (every modern terminal?)
-#include "algorithm"
+#include "algorithm" // count_if, sort, for_each
 #include "iostream"
 #include "map"
-#include "regex"
+#include "numeric" // accumulate
+#include "regex" // regex_match
 #include "string"
-#include "vector"
 #include "conio.h"
 #include "windows.h"
 using namespace std;
 
-// Global Scope definitions
+// enum definitions
 enum sides {LEFT, RIGHT};
 enum status {WIN, LOSE, CONTINUE};
 enum minion_identity {EXPERT, NEWBIE};
-const string MINIONS = "KJCDSB";
+
+// Helper Functions
+// Counts down 3 seconds
+void count_down(void);
+// These functions make use of ANSI escape sequences to manipulate the console
+void cursor_up(int n);
+void clear_line(void);
+void cursor_up_clear(int n);
+// Asks for user input that prevents cursor movement by CR and sometimes backspaces
+string get_without_cr(void);
+// This is a wrapper of std::sort which returns the sorted container directly.
+template< class ElementType, class T>
+T functional_sort(T iterable,bool (*comp)(ElementType, ElementType));
+
+// Constants
 const map<char, minion_identity> IDENTITY_LOOKUP = {
     {'K', EXPERT},
     {'J', EXPERT},
@@ -23,24 +37,6 @@ const map<char, minion_identity> IDENTITY_LOOKUP = {
     {'B', NEWBIE}
 };
 const unsigned int LEN_BRIDGE = 40;
-// Derived definitions
-const unsigned int NUM_MINIONS = MINIONS.length();
-
-// Function Prototypes
-void printgame(string left ,string right, sides side);
-void print_minion_identity(string minions);
-string ask_move(string);
-void move_minions(string &from, string &to, sides side, string to_move);
-status judge(string left, string right);
-bool lose_condition(string current_side);
-
-// Helper Functions
-void count_down(void);
-void cursor_up(int n);
-void clear_line(void);
-void cursor_up_clear(int n);
-string get_without_cr(void);
-
 const string hellomessage = R"(Bomba! You are Minion Kevin! You must direct your team of 6 Minion Bomb Transporters
 across a high narrow bridge.You, Jerry, and Carl are seasoned experts, but Dave, Stuart, and
 Bob are over - excited newbies.Initially, all 6 of you are on one side of the bridge.Your task is to
@@ -50,27 +46,45 @@ to light your way across!Even worse, when newbies and experts are both together 
 and newbies outnumber expects, they start squabbling and hitting one another, their bombs go
 off, and everybody dies!
 )";
+// Derived definitions
+// Extract the string representation of minions from the lookup map
+const string MINIONS_UNSORTED = accumulate(IDENTITY_LOOKUP.begin(), IDENTITY_LOOKUP.end(), string(),
+    [](string str, pair<char, minion_identity> p) -> string {return str + get<0>(p); });
+const string MINIONS = functional_sort<char>(MINIONS_UNSORTED,
+    [](char a, char b) -> bool {return (IDENTITY_LOOKUP.at(a) < IDENTITY_LOOKUP.at(b)); });
+const unsigned int NUM_MINIONS = MINIONS.length();
+
+// Function Prototypes
+void printgame(string left ,string right, sides side, int num_moves);
+void print_minion_identity(string minions);
+string ask_move(string);
+void move_minions(string &from, string &to, sides side, string to_move);
+status judge(string left, string right);
+bool lose_condition(string current_side);
+
+
 
 int main() {
+    cout << MINIONS;
     string left = MINIONS;
     string right = "";
-    int attempts = 0;
+    int num_moves = 1;
     string user_move;
-	sides side = RIGHT;
+    sides side = RIGHT;
     status game;
     cout << hellomessage;
-	
-	cout << "Press any key to enter the game\n";
+
+    cout << "Press any key to enter the game\n";
     _getch();
     system("cls");
     //count_down();
     do {
         side = (side == LEFT) ? RIGHT : LEFT; // switch sides
-        printgame(left, right, side);
+        printgame(left, right, side, num_moves);
         user_move = ask_move((side == LEFT) ? left : right);
         move_minions(left, right, side, user_move);
         game = judge(left, right);
-        attempts++;
+        num_moves++;
     } while (game == CONTINUE);
     if (game == LOSE) {
         cout << "LOSE\n";
@@ -79,15 +93,15 @@ int main() {
         cout << "WIN\n";
     }
     system("PAUSE");
-	return 0;
+    return 0;
 
 }
 
-void printgame(string left, string right, sides side) {
+void printgame(string left, string right, sides side, int num_moves) {
     int padding = NUM_MINIONS - left.length();
-	system("CLS");
+    system("CLS");
     cout << "Expert: Kevin Jerry Carl (KJC)\t\tNewbies: Dave Stuart Bob (DSB)\n";
-    cout << ((side == LEFT)? "Left": "Right") << " side to move now\n\n\n";
+    cout << ((side == LEFT)? "Left": "Right") << " side to move now\t\t\tMove " << num_moves << "\n\n\n";
 
     // Print padding and the identity of minions on their head
     cout << string(padding, ' ');
@@ -118,7 +132,11 @@ string ask_move(string current_side) {
     while (true) {
         user_input = get_without_cr();
         while (!(regex_match(user_input, pattern) && user_input[0] != user_input[1] )) {
-            cout << "Invalid Input!";
+            clear_line();
+            if (user_input == "")
+                cout << "The latern can not just fly back to the other side! Someome must carry it!";
+            else
+                cout << "Invalid Input!";
             // Move back to input line, clear and return
             cursor_up(1);
             clear_line();
@@ -202,7 +220,7 @@ void cursor_up_clear(int n) {
         cursor_up(1);
     };
 }
-
+  
 string get_without_cr() {
     char user_input = 0;
     string user_str = "";
@@ -210,7 +228,7 @@ string get_without_cr() {
         user_input = _getche();
         switch (user_input) {
         case '\b':
-            if (user_str.length() > 0) { 
+            if (user_str.length() > 0) {
                 user_str.pop_back();
                 cout << " \b";
             }
@@ -226,4 +244,9 @@ string get_without_cr() {
     }
     cout << endl; // newline is not automatically inserted like cin
     return user_str;
+}
+template< class ElementType, class T>
+T functional_sort(T iterable,bool (*comp)(ElementType, ElementType)) {
+    sort(iterable.begin(), iterable.end(), comp);
+    return iterable;
 }
