@@ -49,9 +49,9 @@ off, and everybody dies!
 // Derived definitions
 // Extract the string representation of minions from the lookup map
 const string MINIONS_UNSORTED = accumulate(IDENTITY_LOOKUP.begin(), IDENTITY_LOOKUP.end(), string(),
-    [](string str, pair<char, minion_identity> p) -> string {return str + get<0>(p); });
+    [](string str, pair<char, minion_identity> p) -> string {return str + get<0>(p); }); // string concat
 const string MINIONS = functional_sort<char>(MINIONS_UNSORTED,
-    [](char a, char b) -> bool {return (IDENTITY_LOOKUP.at(a) < IDENTITY_LOOKUP.at(b)); });
+    [](char a, char b) -> bool {return (IDENTITY_LOOKUP.at(a) < IDENTITY_LOOKUP.at(b)); }); // sort according to identity
 const unsigned int NUM_MINIONS = MINIONS.length();
 
 // Function Prototypes
@@ -65,19 +65,17 @@ bool lose_condition(string current_side);
 
 
 int main() {
-    cout << MINIONS;
     string left = MINIONS;
-    string right = "";
+    string right = string();
     int num_moves = 1;
     string user_move;
     sides side = RIGHT;
     status game;
     cout << hellomessage;
 
-    cout << "Press any key to enter the game\n";
+    cout << "Press any key to enter the game\n\n";
     _getch();
-    system("cls");
-    //count_down();
+    count_down();
     do {
         side = (side == LEFT) ? RIGHT : LEFT; // switch sides
         printgame(left, right, side, num_moves);
@@ -100,7 +98,7 @@ int main() {
 void printgame(string left, string right, sides side, int num_moves) {
     int padding = NUM_MINIONS - left.length();
     system("CLS");
-    cout << "Expert: Kevin Jerry Carl (KJC)\t\tNewbies: Dave Stuart Bob (DSB)\n";
+    cout << "Expert: Kevin(You!) Jerry Carl\t\tNewbies: Dave Stuart Bob\n";
     cout << ((side == LEFT)? "Left": "Right") << " side to move now\t\t\tMove " << num_moves << "\n\n\n";
 
     // Print padding and the identity of minions on their head
@@ -192,7 +190,7 @@ bool lose_condition(string current_side) {
 // Helper Functions
 
 void count_down() {
-    cout << "Game start in 3 seconds";
+    cout << "Game starting in 3 seconds";
     for (int i = 2; i >= 0; i--) {
         for (int j = 0; j < 3; j++) {
             Sleep(250);
@@ -232,9 +230,8 @@ string get_without_cr() {
                 user_str.pop_back();
                 cout << " \b";
             }
-            else {
+            else
                 cout << '\n'; // Prevents going back 1 line
-            }
             break;
         case '\r':
             break;
