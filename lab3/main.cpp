@@ -25,8 +25,10 @@ void cursor_up_clear(int n);
 // Asks for user input that prevents cursor movement by CR and sometimes backspaces
 string get_without_cr(void);
 // This is a wrapper of std::sort which returns the sorted container directly.
-template< class ElementType, class T>
-T functional_sort(T iterable,bool (*comp)(ElementType, ElementType));
+// Requires iterable to have a begin() and end() member function that returns ForwardIterator
+// and comp as a functor
+template< class T, class CompareFunc>
+T functional_sort(T iterable,CompareFunc comp);
 
 
 // Constants
@@ -53,7 +55,7 @@ off, and everybody dies!
 const string MINIONS_UNSORTED = accumulate(IDENTITY_LOOKUP.begin(), IDENTITY_LOOKUP.end(), string(),
     [](string str, pair<char, minion_identity> p) -> string {return str + get<0>(p); }); // string concat
 // sort according to identity
-const string MINIONS = functional_sort<char>(MINIONS_UNSORTED,
+const string MINIONS = functional_sort(MINIONS_UNSORTED,
     [](char a, char b) {return (IDENTITY_LOOKUP.at(a) < IDENTITY_LOOKUP.at(b)); });
 const unsigned int NUM_MINIONS = MINIONS.length();
 
@@ -78,7 +80,8 @@ int main() {
     string right = string();
     sides side = RIGHT; // will switch at start of game
     // Lambda expressions
-    auto current = [left, right, &side]() -> string {cout << side; return (side == LEFT) ? left : right; };
+    // Needs reference to update
+    auto current = [&left, &right, &side]() -> string {return (side == LEFT) ? left : right; };
     
     
     // main program
@@ -97,10 +100,13 @@ int main() {
     switch_side(side);
     printgame(left, right, side, num_moves);
     if (game == LOSE) {
-        cout << "LOSE\n";
+        cout << "OH NO! The newbies tried to impress the expert, but ended up failing\n" <<
+            "and the bomb explodes! Everybody dies... :(\n" <<
+            "The gory details are not shown here...\n";
     }
     else {
-        cout << "WIN\n";
+        cout << "Kevin! You have done it! You have managed to finish the job in "<< num_moves << " moves!\n" <<
+            "As a bonus for you, you get a banana!";
     }
     system("PAUSE");
     return 0;
@@ -154,9 +160,6 @@ string ask_move(string current_side) {
             // We don't use cin because we don't want carriage return
             // to disrupt our nice prints
             user_input = get_without_cr();
-            //user_input = cin.get();
-            //cout << user_input;
-            //Sleep(2000);
         }
         cout << "You have inputted " << user_input << ". Is that correct?\n" <<
             "Press N or n to type in again, press any other key to get the minons moving.\n";
@@ -217,8 +220,8 @@ void count_down() {
         }
         Sleep(250);
         if (i == 0) return;
-    cout << "\rGame starting in "<< i <<" second" <<
-        ((i<=1)? " ": "s") << "   "; // The last spaces is for the dots
+        cout << "\rGame starting in "<< i <<" second" <<
+            ((i<=1)? "    \b\b\b\b": "s   \b\b\b"); // The last spaces and \b is for the dots
     }
 }
 
@@ -260,8 +263,9 @@ string get_without_cr() {
     cout << endl; // newline is not automatically inserted like cin
     return user_str;
 }
-template< class ElementType, class T>
-T functional_sort(T iterable,bool (*comp)(ElementType, ElementType)) {
+
+template< class T, class CompareFunc>
+T functional_sort(T iterable,CompareFunc comp) {
     sort(iterable.begin(), iterable.end(), comp);
     return iterable;
 }
