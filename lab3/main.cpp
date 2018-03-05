@@ -8,6 +8,7 @@
 #include "conio.h"
 #include "windows.h"
 using namespace std;
+// Note: heavy function programming style here
 
 // enum definitions
 enum sides {LEFT, RIGHT};
@@ -26,6 +27,7 @@ string get_without_cr(void);
 // This is a wrapper of std::sort which returns the sorted container directly.
 template< class ElementType, class T>
 T functional_sort(T iterable,bool (*comp)(ElementType, ElementType));
+
 
 // Constants
 const map<char, minion_identity> IDENTITY_LOOKUP = {
@@ -50,8 +52,9 @@ off, and everybody dies!
 // Extract the string representation of minions from the lookup map
 const string MINIONS_UNSORTED = accumulate(IDENTITY_LOOKUP.begin(), IDENTITY_LOOKUP.end(), string(),
     [](string str, pair<char, minion_identity> p) -> string {return str + get<0>(p); }); // string concat
+// sort according to identity
 const string MINIONS = functional_sort<char>(MINIONS_UNSORTED,
-    [](char a, char b) -> bool {return (IDENTITY_LOOKUP.at(a) < IDENTITY_LOOKUP.at(b)); }); // sort according to identity
+    [](char a, char b) {return (IDENTITY_LOOKUP.at(a) < IDENTITY_LOOKUP.at(b)); });
 const unsigned int NUM_MINIONS = MINIONS.length();
 
 // Function Prototypes
@@ -61,29 +64,38 @@ string ask_move(string);
 void move_minions(string &from, string &to, sides side, string to_move);
 status judge(string left, string right);
 bool lose_condition(string current_side);
+void switch_side(sides &side);
 
 
 
 int main() {
+    // Variable declaration
+    string user_move;
+    status game;
+    // Initial conditions
+    int num_moves = 1;
     string left = MINIONS;
     string right = string();
-    int num_moves = 1;
-    string user_move;
-    sides side = RIGHT;
-    status game;
+    sides side = RIGHT; // will switch at start of game
+    // Lambda expressions
+    auto current = [left, right, &side]() -> string {cout << side; return (side == LEFT) ? left : right; };
+    
+    
+    // main program
     cout << hellomessage;
-
     cout << "Press any key to enter the game\n\n";
     _getch();
     count_down();
     do {
-        side = (side == LEFT) ? RIGHT : LEFT; // switch sides
+        switch_side(side);
         printgame(left, right, side, num_moves);
-        user_move = ask_move((side == LEFT) ? left : right);
+        user_move = ask_move(current());
         move_minions(left, right, side, user_move);
         game = judge(left, right);
         num_moves++;
     } while (game == CONTINUE);
+    switch_side(side);
+    printgame(left, right, side, num_moves);
     if (game == LOSE) {
         cout << "LOSE\n";
     }
@@ -142,6 +154,9 @@ string ask_move(string current_side) {
             // We don't use cin because we don't want carriage return
             // to disrupt our nice prints
             user_input = get_without_cr();
+            //user_input = cin.get();
+            //cout << user_input;
+            //Sleep(2000);
         }
         cout << "You have inputted " << user_input << ". Is that correct?\n" <<
             "Press N or n to type in again, press any other key to get the minons moving.\n";
@@ -187,6 +202,10 @@ bool lose_condition(string current_side) {
 
 }
 
+void switch_side(sides &side){
+    side = static_cast<sides>((side + 1) % 2);
+}
+
 // Helper Functions
 
 void count_down() {
@@ -198,9 +217,8 @@ void count_down() {
         }
         Sleep(250);
         if (i == 0) return;
-        // We erase the 3 dots, then also the "<i> seconds", and push the cursor 1 more backwards
-        else cout << "\b \b\b \b\b \b\b\b\b\b\b\b\b\b\b" <<
-            i << " second" << ((i == 1)? " \b": "s");
+    cout << "\rGame starting in "<< i <<" second" <<
+        ((i<=1)? " ": "s") << "   "; // The last spaces is for the dots
     }
 }
 
